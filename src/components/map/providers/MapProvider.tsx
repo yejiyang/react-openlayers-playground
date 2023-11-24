@@ -17,12 +17,12 @@ const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
     const newMap = new OlMap({
       layers: [
         new OlLayerTile({
-          name: "OSM",
+          // name: "OSM",
           source: new OlSourceOsm(),
         }),
       ],
       view: new OlView({
-        center: fromLonLat([8, 50]),
+        center: fromLonLat([10, 60]),
         zoom: 4,
       }),
     });
@@ -31,9 +31,7 @@ const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
     return () => newMap.setTarget(undefined);
   }, []);
 
-  return (
-    <MapContext.Provider value={{ map: olMap }}>{children}</MapContext.Provider>
-  );
+  return <MapContext.Provider value={{ map: olMap }}>{children}</MapContext.Provider>;
 };
 
 export default MapProvider;
