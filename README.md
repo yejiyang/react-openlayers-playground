@@ -12,3 +12,7 @@ This is a [Vite](https://vitejs.dev) project together with React.
 - [CodeSandbox — Discord](https://discord.gg/Ggarp3pX5H)
 - [Vite — GitHub](https://github.com/vitejs/vite)
 - [Vite — Docs](https://vitejs.dev/guide/)
+
+## License
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fyejiyang%2Freact-openlayers-playground.svg?type=shield&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2Fyejiyang%2Freact-openlayers-playground?ref=badge_shield&issueType=license)
