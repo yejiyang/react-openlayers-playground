@@ -12,6 +12,7 @@ import { Icon, Style, RegularShape } from "ol/style.js";
 import CircleStyle from "ol/style/Circle";
 import { Cluster } from "ol/source";
 import { fromLonLat } from "ol/proj";
+import { click, never, shiftKeyOnly } from "ol/events/condition";
 
 const coordinates = [
   [0, 0],
@@ -40,6 +41,18 @@ const styleFunction = (feature) => {
   });
 };
 
+const selectStyleFunction = (feature) => {
+  return new Style({
+    geometry: feature.getGeometry(),
+    image: new CircleStyle({
+      radius: 10,
+      fill: new Fill({
+        color: "blue",
+      }),
+    }),
+  });
+};
+
 const pointsLayer = new VectorLayer({
   source: new Cluster({
     distance: 1,
@@ -60,14 +73,30 @@ const SelectFeature = () => {
 
   pointsLayer.set("name", "PointsLayer");
 
+  const selectInteraction = new Select({
+    layers: [pointsLayer],
+    // map?.hasFeatureAtPixel(evt.pixel) will avoid deselecting the feature(s) when clicking outside of the feature(s)
+    condition: (evt) => (evt.type === "click" && map?.hasFeatureAtPixel(evt.pixel)) ?? false,
+    style: selectStyleFunction,
+  });
+
   useEffect(() => {
     if (!map) return;
 
     map.addLayer(pointsLayer);
 
+    if (selectInteraction) {
+      map.addInteraction(selectInteraction);
+      selectInteraction.on("select", (e) => {
+        console.log(selectInteraction.getFeatures().getLength(), e);
+        // e.target.getFeatures().clear();
+      });
+    }
+
     return () => {
       if (map) {
         map.removeLayer(pointsLayer);
+        map.removeInteraction(selectInteraction);
       }
     };
   }, [map]);
