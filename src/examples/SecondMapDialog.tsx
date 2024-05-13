@@ -3,6 +3,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import MapContext from "../components/map/context/MapContext";
 import { getOsmTileLayer } from "../components/map/layers/MapLayers";
 import { OlMap, OlView } from "../components/map/types/MapTypes";
+import { Collection, getUid } from "ol";
 
 type Props = {};
 
@@ -14,12 +15,15 @@ const SecondMapDialog = (props: Props) => {
   useEffect(() => {
     const layers = map?.getLayers().getArray();
     const newMap = new OlMap({
-      layers: layers,
+      //   layers: layers,
       view: new OlView({
         center: fromLonLat([0, 0]),
         zoom: 4,
       }),
+      //   controls: new Collection(),
+      //   interactions: new Collection(),
     });
+    layers?.forEach((layer) => newMap.addLayer(layer));
 
     if (!map || !mapRef.current) return;
     newMap.setTarget(mapRef.current);
@@ -38,6 +42,7 @@ const SecondMapDialog = (props: Props) => {
           console.log(olMap?.getAllLayers());
           console.log(olMap?.getAllLayers().map((layer) => layer.getKeys()));
           console.log(olMap?.getAllLayers().map((layer) => layer.get("name")));
+          console.log(olMap?.getAllLayers().map((layer) => getUid(layer)));
         }}
       >
         List all layers in the map
