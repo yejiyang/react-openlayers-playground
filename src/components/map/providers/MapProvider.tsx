@@ -1,20 +1,13 @@
 import React, { useEffect, useState, ReactNode } from "react";
 import OlMap from "ol/Map";
 import OlView from "ol/View";
-import OlLayerTile from "ol/layer/Tile";
-import OlSourceOsm from "ol/source/OSM";
 import { fromLonLat } from "ol/proj";
 import MapContext from "../context/MapContext";
+import { osmTileLayer } from "../layers/MapLayers";
 
 interface MapProviderProps {
   children: ReactNode; // Explicitly declaring children as a prop
 }
-
-const osmTileLayer = new OlLayerTile({
-  // name: "OSM",
-  source: new OlSourceOsm(),
-  zIndex: 1,
-});
 
 const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
   const [olMap, setOlMap] = useState<OlMap | undefined>();
