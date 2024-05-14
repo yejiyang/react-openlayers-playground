@@ -1,7 +1,11 @@
 import { fromLonLat } from "ol/proj";
 import { useContext, useEffect, useRef, useState } from "react";
 import MapContext from "../components/map/context/MapContext";
-import { getNorwaySatelliteLayer, getOsmTileLayer } from "../components/map/layers/MapLayers";
+import {
+  getNorwaySatelliteLayer,
+  getNorwayTopographicLayer,
+  getOsmTileLayer,
+} from "../components/map/layers/MapLayers";
 import { OlMap, OlView } from "../components/map/types/MapTypes";
 import { Collection, getUid } from "ol";
 
@@ -15,7 +19,7 @@ const SecondMapDialog = (props: Props) => {
   useEffect(() => {
     const layers = map?.getLayers().getArray();
     const newMap = new OlMap({
-        layers: [getNorwaySatelliteLayer()],
+      layers: [getNorwayTopographicLayer()],
       view: new OlView({
         center: fromLonLat([10.75, 59.91]),
         zoom: 4,
