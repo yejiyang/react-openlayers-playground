@@ -39,22 +39,26 @@ const defaultResolutions0_19 = [
 ];
 const defaultExtent3857 = [-20037508.342789244, -20037508.342789244, 20037508.342789244, 20037508.342789244];
 
+const commonLayerOptions = {
+  zIndex: defaultZIndexBaseLayer,
+  opacity: defaultOpacityBaseLayer,
+};
+
 export const osmTileLayer = new OlLayerTile({
   source: new OlSourceOsm(),
-  zIndex: 1,
+  ...commonLayerOptions,
 });
 
 export const getOsmTileLayer = () => {
   const layer = new OlLayerTile({
     source: new OlSourceOsm(),
-    zIndex: 1,
+    ...commonLayerOptions,
   });
 
   layer.set("name", "osm-tile-layer");
   return layer;
 };
 
-// Norway satellite layer: https://services.geodataonline.no/arcgis/rest/services/Geocache_WMAS_WGS84/GeocacheBilder/MapServer
 const norwaySatelliteSource = new OlSourceXYZ({
   url: "https://services.geodataonline.no/arcgis/rest/services/Geocache_WMAS_WGS84/GeocacheBilder/MapServer/tile/{z}/{y}/{x}",
   crossOrigin: "anonymous",
@@ -68,8 +72,7 @@ const norwaySatelliteSource = new OlSourceXYZ({
 export const getNorwaySatelliteLayer = () => {
   const layer = new OlLayerTile({
     source: norwaySatelliteSource,
-    zIndex: defaultZIndexBaseLayer,
-    opacity: defaultOpacityBaseLayer,
+    ...commonLayerOptions,
   });
 
   layer.set("name", "norway-satellite-layer");
@@ -93,8 +96,7 @@ const norwayTopographicSource = new OlSourceWMTS(
 export const getNorwayTopographicLayer = () => {
   const layer = new OlLayerTile({
     source: norwayTopographicSource,
-    zIndex: defaultZIndexBaseLayer,
-    opacity: defaultOpacityBaseLayer,
+    ...commonLayerOptions,
   });
 
   layer.set("name", "norway-topographic-layer");
@@ -118,8 +120,7 @@ const norwayTopographicGreySource = new OlSourceWMTS(
 export const getNorwayTopographicGreyLayer = () => {
   const layer = new OlLayerTile({
     source: norwayTopographicGreySource,
-    zIndex: defaultZIndexBaseLayer,
-    opacity: defaultOpacityBaseLayer,
+    ...commonLayerOptions,
   });
 
   layer.set("name", "norway-topographic-grey-layer");
@@ -138,8 +139,7 @@ const gebcoGlobalShadedReliefSource = new OlSourceTileWMS({
 export const getGebcoGlobalShadedReliefLayer = () => {
   const layer = new OlLayerTile({
     source: gebcoGlobalShadedReliefSource,
-    zIndex: defaultZIndexBaseLayer,
-    opacity: defaultOpacityBaseLayer,
+    ...commonLayerOptions,
   });
 
   layer.set("name", "gebco-global-shaded-relief-layer");
