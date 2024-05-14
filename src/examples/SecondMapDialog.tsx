@@ -3,6 +3,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import MapContext from "../components/map/context/MapContext";
 import {
   getNorwaySatelliteLayer,
+  getNorwayTopographicGreyLayer,
   getNorwayTopographicLayer,
   getOsmTileLayer,
 } from "../components/map/layers/MapLayers";
@@ -19,7 +20,7 @@ const SecondMapDialog = (props: Props) => {
   useEffect(() => {
     const layers = map?.getLayers().getArray();
     const newMap = new OlMap({
-      layers: [getNorwayTopographicLayer()],
+      layers: [getNorwayTopographicGreyLayer()],
       view: new OlView({
         center: fromLonLat([10.75, 59.91]),
         zoom: 4,
