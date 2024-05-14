@@ -2,6 +2,7 @@ import { fromLonLat } from "ol/proj";
 import { useContext, useEffect, useRef, useState } from "react";
 import MapContext from "../components/map/context/MapContext";
 import {
+  getGebcoGlobalShadedReliefLayer,
   getNorwaySatelliteLayer,
   getNorwayTopographicGreyLayer,
   getNorwayTopographicLayer,
@@ -20,7 +21,7 @@ const SecondMapDialog = (props: Props) => {
   useEffect(() => {
     const layers = map?.getLayers().getArray();
     const newMap = new OlMap({
-      layers: [getNorwayTopographicGreyLayer()],
+      layers: [getGebcoGlobalShadedReliefLayer()],
       view: new OlView({
         center: fromLonLat([10.75, 59.91]),
         zoom: 4,

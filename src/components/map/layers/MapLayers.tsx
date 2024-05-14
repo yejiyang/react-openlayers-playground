@@ -2,6 +2,7 @@ import OlLayerTile from "ol/layer/Tile";
 import OlSourceOsm from "ol/source/OSM";
 import OlSourceXYZ from "ol/source/XYZ";
 import OlSourceWMTS from "ol/source/WMTS";
+import OlSourceTileWMS from "ol/source/TileWMS";
 import TileGrid from "ol/tilegrid/TileGrid";
 import { getWMTSOptionsFromStaticParams } from "../utils/getWMTSOptions";
 
@@ -123,5 +124,25 @@ export const getNorwayTopographicGreyLayer = () => {
 
   layer.set("name", "norway-topographic-grey-layer");
   layer.set("apiName", "NORWAY_TOPOGRAPHIC_GRAYSCALE");
+  return layer;
+};
+
+const gebcoGlobalShadedReliefSource = new OlSourceTileWMS({
+  url: "https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?",
+  params: {
+    layers: "GEBCO_LATEST",
+  },
+  crossOrigin: "anonymous",
+});
+
+export const getGebcoGlobalShadedReliefLayer = () => {
+  const layer = new OlLayerTile({
+    source: gebcoGlobalShadedReliefSource,
+    zIndex: defaultZIndexBaseLayer,
+    opacity: defaultOpacityBaseLayer,
+  });
+
+  layer.set("name", "gebco-global-shaded-relief-layer");
+  layer.set("apiName", "GEBCO_WORLD");
   return layer;
 };
