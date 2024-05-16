@@ -21,7 +21,7 @@ const SecondMapDialog = (props: Props) => {
   useEffect(() => {
     const layers = map?.getLayers().getArray();
     const newMap = new OlMap({
-      layers: [getGebcoGlobalShadedReliefLayer()],
+      layers: layers,
       view: new OlView({
         center: fromLonLat([10.75, 59.91]),
         zoom: 4,
@@ -37,6 +37,20 @@ const SecondMapDialog = (props: Props) => {
 
     return () => newMap.setTarget(undefined);
   }, [map, mapRef]);
+
+  useEffect(() => {
+    const postrenderCallback = () => console.log("postrenderCallback");
+    const rendercompleteCallback = () => console.log("rendercompleteCallback");
+
+    if (!olMap) return;
+    olMap.once("postrender", postrenderCallback);
+    olMap.on("rendercomplete", rendercompleteCallback);
+
+    return () => {
+      olMap.un("postrender", postrenderCallback);
+      olMap.un("rendercomplete", rendercompleteCallback);
+    };
+  }, [olMap]);
 
   return (
     <dialog open style={{ height: 500, width: 500 }}>
