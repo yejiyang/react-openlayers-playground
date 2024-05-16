@@ -21,7 +21,7 @@ const SecondMapDialog = (props: Props) => {
   useEffect(() => {
     const layers = map?.getLayers().getArray();
     const newMap = new OlMap({
-      layers: layers,
+      layers: [getNorwaySatelliteLayer()],
       view: new OlView({
         center: fromLonLat([10.75, 59.91]),
         zoom: 4,
@@ -43,7 +43,7 @@ const SecondMapDialog = (props: Props) => {
     const rendercompleteCallback = () => console.log("rendercompleteCallback");
 
     if (!olMap) return;
-    olMap.once("postrender", postrenderCallback);
+    olMap.on("postrender", postrenderCallback);
     olMap.on("rendercomplete", rendercompleteCallback);
 
     return () => {
