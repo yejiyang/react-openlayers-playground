@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect } from "react";
 import KML from "ol/format/KML.js";
 import { Circle as CircleStyle, Fill, RegularShape, Stroke, Style, Text } from "ol/style.js";
 import { Cluster, Vector as VectorSource } from "ol/source.js";
@@ -6,6 +6,10 @@ import { Select } from "ol/interaction.js";
 import { Vector as VectorLayer } from "ol/layer.js";
 import { createEmpty, extend, getHeight, getWidth } from "ol/extent.js";
 import MapContext from "../components/map/context/MapContext";
+import type {
+  Feature as OlFeature,
+} from "ol";
+import { FeatureLike } from "ol/Feature";
 
 const EarthquakeClusters = () => {
   const { map } = useContext(MapContext);
@@ -28,7 +32,7 @@ const EarthquakeClusters = () => {
     color: "rgba(255, 255, 255, 0.01)",
   });
 
-  function createEarthquakeStyle(feature) {
+  function createEarthquakeStyle(feature: OlFeature) {
     // 2012_Earthquakes_Mag5.kml stores the magnitude of each earthquake in a
     // standards-violating <magnitude> tag in each Placemark.  We extract it
     // from the Placemark's name instead.
@@ -49,11 +53,11 @@ const EarthquakeClusters = () => {
     });
   }
 
-  let maxFeatureCount;
-  let vector = null;
-  const calculateClusterInfo = function (resolution) {
+  let maxFeatureCount: number|undefined;
+  let vector: VectorLayer<VectorSource>|null = null;
+  const calculateClusterInfo = function (resolution: number) {
     maxFeatureCount = 0;
-    const features = vector.getSource().getFeatures();
+    const features = vector!.getSource()!.getFeatures();
     let feature, radius;
     for (let i = features.length - 1; i >= 0; --i) {
       feature = features[i];
@@ -69,8 +73,9 @@ const EarthquakeClusters = () => {
     }
   };
 
-  let currentResolution;
-  function styleFunction(feature, resolution) {
+  let currentResolution: number|undefined;
+  function styleFunction(feature: FeatureLike, resolution: number) {
+    feature = feature as OlFeature;
     if (resolution != currentResolution) {
       calculateClusterInfo(resolution);
       currentResolution = resolution;
@@ -82,7 +87,7 @@ const EarthquakeClusters = () => {
         image: new CircleStyle({
           radius: feature.get("radius"),
           fill: new Fill({
-            color: [255, 153, 0, Math.min(0.8, 0.4 + size / maxFeatureCount)],
+            color: [255, 153, 0, Math.min(0.8, 0.4 + size / maxFeatureCount!)],
           }),
         }),
         text: new Text({
@@ -98,7 +103,7 @@ const EarthquakeClusters = () => {
     return style;
   }
 
-  function selectStyleFunction(feature) {
+  function selectStyleFunction(feature: FeatureLike) {
     const styles = [
       new Style({
         image: new CircleStyle({
