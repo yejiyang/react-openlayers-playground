@@ -1,10 +1,10 @@
 import "./App.css";
 import MapProvider from "./components/map/providers/MapProvider";
 import Map from "./components/map/Map";
-import SelectFeature from "./examples/SelectFeature";
 import EarthquakeClusters from "./examples/EarthquakeClusters";
 import { useState } from "react";
 import SecondMapDialog from "./examples/SecondMapDialog";
+import GeoTiffLayer from "./examples/GeoTiff";
 
 function App() {
   const [showDialog, setShowDialog] = useState(false);
@@ -16,7 +16,8 @@ function App() {
           <button onClick={() => setShowDialog(true)}>Show second map dialog</button>
           <Map>
             {/* <SelectFeature /> */}
-            <EarthquakeClusters />
+           {/*  <EarthquakeClusters /> */}
+            <GeoTiffLayer zoomToView={true} />
           </Map>
           {showDialog && <SecondMapDialog />}
         </div>

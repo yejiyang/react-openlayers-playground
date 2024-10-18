@@ -2,6 +2,8 @@ import { ReactNode } from "react";
 import { FunctionComponent, useContext, useEffect, useRef } from "react";
 import MapContext from "./context/MapContext";
 
+import "ol/ol.css";
+
 interface Props {
   children: ReactNode; // Explicitly declaring children as a prop
 }
