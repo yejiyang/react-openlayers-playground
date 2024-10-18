@@ -20,7 +20,8 @@ const GeoTiffLayer = (ps: { zoomToView?: boolean | number }) => {
 
   const { map } = useContext(MapContext);
 
-  const src = geoTiffSrc; // 'https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/36/Q/WD/2020/7/S2A_36QWD_20200701_0_L2A/TCI.tif';
+  const src2 = "https://www.dropbox.com/scl/fo/b18077o77wyyh9i7cc3rz/AIl5tyP7dXQob6aD81ZW2q0?dl=1&e=1&preview=TWN-R01.tif&rlkey=s9ogydnkjeqzfrsapr5syezf1&st=e5xbhhqt"; // geoTiffSrc; // 'https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/36/Q/WD/2020/7/S2A_36QWD_20200701_0_L2A/TCI.tif';
+  const src = "https://dl.dropboxusercontent.com/scl/fo/b18077o77wyyh9i7cc3rz/AOV0NbcgrJEZbGA9L7vVvJ0/TWN-R01.tif?rlkey=s9ogydnkjeqzfrsapr5syezf1&dl=1";
 
   const source = new ol_source_GeoTIFF({
     sources: [
@@ -28,6 +29,10 @@ const GeoTiffLayer = (ps: { zoomToView?: boolean | number }) => {
         url: src,
       },
     ],
+    sourceOptions: {
+        allowFullFile: true,
+        forceXHR: true,
+    }
     //projection: 'EPSG:4326',
   });
 
