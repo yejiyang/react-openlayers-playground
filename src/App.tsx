@@ -11,7 +11,6 @@ function inputUrlUpdate(sources: LayerSpec[], v: string|undefined): string|undef
   if (!v) return v;
   if (sources.find((s) => s.url === v)) {
     v += "#";
-    // eslint-disable-next-line no-constant-condition
     for (let i = 2; i < 1000; i++) {
       let url2 = v + i;
       if (!sources.find((s) => s.url === url2)) {
