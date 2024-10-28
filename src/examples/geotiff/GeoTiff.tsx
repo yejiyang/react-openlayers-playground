@@ -21,6 +21,7 @@ type LayerSpec = {
     url: string;
     name: string;
     visible?: boolean;
+
     initZoom?: boolean|number;
 
     setVisible?: (v: boolean) => void;
@@ -28,11 +29,9 @@ type LayerSpec = {
 };
 
 const GeoTiffLayer = (ps: {
-    zoomToView?: boolean | number,
-
     sources: LayerSpec[],
 }) => {
-  let { zoomToView, sources: srcs } = ps;
+  let { sources: srcs } = ps;
 
   const { map } = useContext(MapContext);
 
@@ -55,7 +54,7 @@ const GeoTiffLayer = (ps: {
       let layer =  new ol_layer_WebGLTile({
         source: source,
         zIndex: 2,
-        visible: l.visible,
+        visible: l.visible ?? true,
       });
 
       let r = {

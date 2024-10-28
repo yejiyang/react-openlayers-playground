@@ -8,8 +8,10 @@ import { createPortal } from "react-dom";
 
 const LayerControl = (props: {
     layer: LayerSpec,
+    removeLayer: (url: string) => void,
 }) => {
     let layer = props.layer;
+    let removeLayer = props.removeLayer;
     return (
         <div style={{
             display: "flex",
@@ -29,12 +31,18 @@ const LayerControl = (props: {
             <input style={{
                 display: "flex",
                 width: "1em",
-            }} type="checkbox" ref={(o) => o != null && (o.checked = !!layer.visible)} onChange={(e) => {
+            }} type="checkbox" ref={(e) => (e && (e.checked = !!(layer.visible ?? true)))} onChange={(e) => {
                 layer.visible = e.target.checked;
                 if (layer.setVisible != null) {
                     layer.setVisible(e.target.checked);
                 }
             }} />
+            <button style={{
+                display: "flex",
+                width: "1em",
+            }} onClick={(e) => {
+                removeLayer(layer.url);
+            }} title="remove layer">X</button>
         </div>
     );
 };
@@ -72,9 +80,10 @@ const ControlContainer = (props: {
 
 const LayerControlList = (props: {
     layers: LayerSpec[],
+    removeLayer: (url: string) => void,
 }) => {
     let ll = props.layers.map((l) => {
-        return <LayerControl key={l.url} layer={l} />;
+        return <LayerControl key={l.url} layer={l} removeLayer={props.removeLayer} />;
     });
 
     console.log(ll.length);
