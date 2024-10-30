@@ -17,7 +17,7 @@ function App() {
           <button onClick={() => setShowDialog(true)}>Show second map dialog</button>
           <Map>
             {/* <SelectFeature /> */}
-            <EarthquakeClusters />
+            {/* <EarthquakeClusters /> */}
             <GridLine />
           </Map>
           {showDialog && <SecondMapDialog />}
