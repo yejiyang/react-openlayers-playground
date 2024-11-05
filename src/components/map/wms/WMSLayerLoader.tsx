@@ -2,11 +2,15 @@ import React, { useState, useEffect } from "react";
 import TileLayer from "ol/layer/Tile";
 import TileWMS from "ol/source/TileWMS";
 import MapContext from "../context/MapContext";
+import { fromLonLat } from "ol/proj";
+
+type SelectionState = "selected" | "unselected" | "indeterminate";
 
 type WMSLayer = {
   name: string;
   title: string;
   children?: WMSLayer[];
+  parent?: WMSLayer;
 };
 
 const defaultWMSURL =
@@ -17,7 +21,9 @@ const WMSLayerLoader = () => {
   const [wmsUrl, setWmsUrl] = useState(defaultWMSURL);
   const [wmsVersion, setWmsVersion] = useState("1.3.0");
   const [layers, setLayers] = useState<WMSLayer[]>([]);
-  const [selectedLayers, setSelectedLayers] = useState<string[]>([]);
+  const [layerSelectionState, setLayerSelectionState] = useState<{
+    [layerName: string]: SelectionState;
+  }>({});
 
   const fetchAndParseCapabilities = async () => {
     try {
@@ -54,40 +60,140 @@ const WMSLayerLoader = () => {
 
     const topLayerNodes = Array.from(capability.childNodes).filter((node) => node.nodeName === "Layer") as Element[];
 
-    return topLayerNodes.map(parseLayer);
+    return topLayerNodes.map((node) => parseLayer(node));
   };
 
-  const parseLayer = (layerNode: Element): WMSLayer => {
+  const parseLayer = (layerNode: Element, parentLayer?: WMSLayer): WMSLayer => {
     const nameNode = layerNode.getElementsByTagName("Name")[0];
     const titleNode = layerNode.getElementsByTagName("Title")[0];
 
     const name = nameNode?.textContent || "";
     const title = titleNode?.textContent || "";
 
+    const layer: WMSLayer = { name, title, parent: parentLayer };
+
     const childLayerNodes = Array.from(layerNode.childNodes).filter((node) => node.nodeName === "Layer") as Element[];
 
-    const children = childLayerNodes.map(parseLayer);
-
-    const layer: WMSLayer = { name, title };
-    if (children.length > 0) {
-      layer.children = children;
+    if (childLayerNodes.length > 0) {
+      layer.children = childLayerNodes.map((childNode) => parseLayer(childNode, layer));
     }
 
     return layer;
   };
 
-  const handleLayerSelection = (layerName: string) => {
-    setSelectedLayers((prevSelected) => {
-      if (prevSelected.includes(layerName)) {
-        return prevSelected.filter((name) => name !== layerName);
-      } else {
-        return [...prevSelected, layerName];
-      }
+  const handleLayerSelection = (layer: WMSLayer, newState?: SelectionState) => {
+    const currentState = layerSelectionState[layer.name] || "unselected";
+    const nextState = newState || (currentState === "selected" ? "unselected" : "selected");
+
+    const updatedSelectionState = { ...layerSelectionState };
+    updatedSelectionState[layer.name] = nextState;
+
+    // Update children
+    if (layer.children && layer.children.length > 0) {
+      updateChildSelectionState(layer, nextState, updatedSelectionState);
+    }
+
+    // Update parents
+    updateParentSelectionState(layer.parent, updatedSelectionState);
+
+    setLayerSelectionState(updatedSelectionState);
+  };
+
+  const updateChildSelectionState = (
+    layer: WMSLayer,
+    state: SelectionState,
+    selectionState: { [layerName: string]: SelectionState }
+  ) => {
+    if (layer.children) {
+      layer.children.forEach((child) => {
+        selectionState[child.name] = state;
+        updateChildSelectionState(child, state, selectionState);
+      });
+    }
+  };
+
+  const updateParentSelectionState = (
+    layer: WMSLayer | undefined,
+    selectionState: { [layerName: string]: SelectionState }
+  ) => {
+    if (!layer) return;
+
+    const childStates = layer.children?.map((child) => selectionState[child.name]) || [];
+
+    let newState: SelectionState;
+    if (childStates.every((state) => state === "selected")) {
+      newState = "selected";
+    } else if (childStates.every((state) => state === "unselected")) {
+      newState = "unselected";
+    } else {
+      newState = "indeterminate";
+    }
+
+    selectionState[layer.name] = newState;
+
+    updateParentSelectionState(layer.parent, selectionState);
+  };
+
+  const renderLayerTree = (layers: WMSLayer[], level = 0) => {
+    return layers.map((layer) => {
+      const hasChildren = layer.children && layer.children.length > 0;
+      const paddingLeft = level * 20;
+      const selectionState = layerSelectionState[layer.name] || "unselected";
+
+      const isChecked = selectionState === "selected";
+      const isIndeterminate = selectionState === "indeterminate";
+
+      return (
+        <div key={`${layer.name}-${layer.title}`}>
+          <div style={{ paddingLeft: `${paddingLeft}px` }}>
+            {layer.name && (
+              <IndeterminateCheckbox
+                id={layer.name}
+                checked={isChecked}
+                indeterminate={isIndeterminate}
+                onChange={() => handleLayerSelection(layer)}
+                label={layer.title}
+              />
+            )}
+            {!layer.name && <span>{layer.title}</span>}
+          </div>
+          {hasChildren && renderLayerTree(layer.children!, level + 1)}
+        </div>
+      );
     });
   };
 
+  const IndeterminateCheckbox = ({ id, checked, indeterminate, onChange, label }: CheckboxProps) => {
+    const ref = React.useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+      if (ref.current) {
+        ref.current.indeterminate = indeterminate;
+      }
+    }, [indeterminate]);
+
+    return (
+      <>
+        <input type="checkbox" id={id} checked={checked} ref={ref} onChange={onChange} />
+        <label htmlFor={id}>{label}</label>
+      </>
+    );
+  };
+
+  interface CheckboxProps {
+    id: string;
+    checked: boolean;
+    indeterminate: boolean;
+    onChange: () => void;
+    label: string;
+  }
+
   useEffect(() => {
     if (!map) return;
+
+    const selectedLayerNames = Object.entries(layerSelectionState)
+      .filter(([_, state]) => state === "selected")
+      .map(([layerName]) => layerName);
 
     const mapLayers = map.getLayers().getArray();
     const existingLayerNames = mapLayers
@@ -96,7 +202,7 @@ const WMSLayerLoader = () => {
 
     // Remove layers that are no longer selected
     existingLayerNames.forEach((name) => {
-      if (!selectedLayers.includes(name)) {
+      if (!selectedLayerNames.includes(name)) {
         const layerToRemove = mapLayers.find((layer) => layer.get("name") === name);
         if (layerToRemove) {
           map.removeLayer(layerToRemove);
@@ -105,7 +211,7 @@ const WMSLayerLoader = () => {
     });
 
     // Add new layers
-    selectedLayers.forEach((layerName) => {
+    selectedLayerNames.forEach((layerName) => {
       if (!existingLayerNames.includes(layerName)) {
         const wmsLayer = new TileLayer({
           source: new TileWMS({
@@ -125,33 +231,13 @@ const WMSLayerLoader = () => {
         map.addLayer(wmsLayer);
       }
     });
-  }, [selectedLayers, map, wmsUrl, wmsVersion]);
 
-  const renderLayerTree = (layers: WMSLayer[], level = 0) => {
-    return layers.map((layer) => {
-      const hasChildren = layer.children && layer.children.length > 0;
-      const paddingLeft = level * 20;
-      return (
-        <div key={`${layer.name}-${layer.title}`}>
-          <div style={{ paddingLeft: `${paddingLeft}px` }}>
-            {layer.name && (
-              <>
-                <input
-                  type="checkbox"
-                  id={layer.name}
-                  checked={selectedLayers.includes(layer.name)}
-                  onChange={() => handleLayerSelection(layer.name)}
-                />
-                <label htmlFor={layer.name}>{layer.title}</label>
-              </>
-            )}
-            {!layer.name && <span>{layer.title}</span>}
-          </div>
-          {hasChildren && renderLayerTree(layer.children!, level + 1)}
-        </div>
-      );
-    });
-  };
+    // Adjust map view
+    if (selectedLayerNames.length > 0) {
+      map.getView().setCenter(fromLonLat([15, 65]));
+      map.getView().setZoom(4);
+    }
+  }, [layerSelectionState, map, wmsUrl, wmsVersion]);
 
   return (
     <div>
