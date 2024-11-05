@@ -6,6 +6,7 @@ import MapContext from "../context/MapContext";
 type WMSLayer = {
   name: string;
   title: string;
+  children?: WMSLayer[];
 };
 
 const defaultWMSURL =
@@ -48,26 +49,34 @@ const WMSLayerLoader = () => {
   };
 
   const parseLayersFromCapabilities = (xmlDoc: Document): WMSLayer[] => {
-    const layers: WMSLayer[] = [];
+    const capability = xmlDoc.getElementsByTagName("Capability")[0];
+    if (!capability) return [];
 
-    const layerNodes = xmlDoc.getElementsByTagName("Layer");
-    for (let i = 0; i < layerNodes.length; i++) {
-      const layerNode = layerNodes[i];
-      const nameNode = layerNode.getElementsByTagName("Name")[0];
-      const titleNode = layerNode.getElementsByTagName("Title")[0];
+    const topLayerNodes = Array.from(capability.childNodes).filter((node) => node.nodeName === "Layer") as Element[];
 
-      if (nameNode && titleNode) {
-        const name = nameNode.textContent || "";
-        const title = titleNode.textContent || "";
-        layers.push({ name, title });
-      }
+    return topLayerNodes.map(parseLayer);
+  };
+
+  const parseLayer = (layerNode: Element): WMSLayer => {
+    const nameNode = layerNode.getElementsByTagName("Name")[0];
+    const titleNode = layerNode.getElementsByTagName("Title")[0];
+
+    const name = nameNode?.textContent || "";
+    const title = titleNode?.textContent || "";
+
+    const childLayerNodes = Array.from(layerNode.childNodes).filter((node) => node.nodeName === "Layer") as Element[];
+
+    const children = childLayerNodes.map(parseLayer);
+
+    const layer: WMSLayer = { name, title };
+    if (children.length > 0) {
+      layer.children = children;
     }
 
-    return layers;
+    return layer;
   };
 
   const handleLayerSelection = (layerName: string) => {
-    console.log("Selected layer:", layerName);
     setSelectedLayers((prevSelected) => {
       if (prevSelected.includes(layerName)) {
         return prevSelected.filter((name) => name !== layerName);
@@ -84,8 +93,6 @@ const WMSLayerLoader = () => {
     const existingLayerNames = mapLayers
       .filter((layer) => layer.get("wmsLayer") === true)
       .map((layer) => layer.get("name"));
-
-    console.log("Existing layers:", existingLayerNames);
 
     // Remove layers that are no longer selected
     existingLayerNames.forEach((name) => {
@@ -108,7 +115,6 @@ const WMSLayerLoader = () => {
               TILED: true,
               VERSION: wmsVersion,
             },
-            // serverType: "arcgis", // Adjust based on server type
             crossOrigin: "anonymous",
           }),
           opacity: 0.7,
@@ -120,6 +126,32 @@ const WMSLayerLoader = () => {
       }
     });
   }, [selectedLayers, map, wmsUrl, wmsVersion]);
+
+  const renderLayerTree = (layers: WMSLayer[], level = 0) => {
+    return layers.map((layer) => {
+      const hasChildren = layer.children && layer.children.length > 0;
+      const paddingLeft = level * 20;
+      return (
+        <div key={`${layer.name}-${layer.title}`}>
+          <div style={{ paddingLeft: `${paddingLeft}px` }}>
+            {layer.name && (
+              <>
+                <input
+                  type="checkbox"
+                  id={layer.name}
+                  checked={selectedLayers.includes(layer.name)}
+                  onChange={() => handleLayerSelection(layer.name)}
+                />
+                <label htmlFor={layer.name}>{layer.title}</label>
+              </>
+            )}
+            {!layer.name && <span>{layer.title}</span>}
+          </div>
+          {hasChildren && renderLayerTree(layer.children!, level + 1)}
+        </div>
+      );
+    });
+  };
 
   return (
     <div>
@@ -134,17 +166,7 @@ const WMSLayerLoader = () => {
       {layers.length > 0 && (
         <div>
           <h3>Select Layers to Add:</h3>
-          {layers.map((layer) => (
-            <div key={`${layer.name}${layer.title}`}>
-              <input
-                type="checkbox"
-                id={layer.name}
-                checked={selectedLayers.includes(layer.name)}
-                onChange={() => handleLayerSelection(layer.name)}
-              />
-              <label htmlFor={layer.name}>{layer.title}</label>
-            </div>
-          ))}
+          {renderLayerTree(layers)}
         </div>
       )}
     </div>
