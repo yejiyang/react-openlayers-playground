@@ -88,14 +88,14 @@ const WMSLayerLoader = () => {
     console.log("Existing layers:", existingLayerNames);
 
     // Remove layers that are no longer selected
-    // existingLayerNames.forEach((name) => {
-    //   if (!selectedLayers.includes(name)) {
-    //     const layerToRemove = mapLayers.find((layer) => layer.get("name") === name);
-    //     if (layerToRemove) {
-    //       map.removeLayer(layerToRemove);
-    //     }
-    //   }
-    // });
+    existingLayerNames.forEach((name) => {
+      if (!selectedLayers.includes(name)) {
+        const layerToRemove = mapLayers.find((layer) => layer.get("name") === name);
+        if (layerToRemove) {
+          map.removeLayer(layerToRemove);
+        }
+      }
+    });
 
     // Add new layers
     selectedLayers.forEach((layerName) => {
