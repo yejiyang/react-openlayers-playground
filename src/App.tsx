@@ -6,6 +6,8 @@ import EarthquakeClusters from "./examples/EarthquakeClusters";
 import { useState } from "react";
 import SecondMapDialog from "./examples/SecondMapDialog";
 import GridLine from "./components/map/layers/GridLine";
+import WMSLayerLoader from "./components/map/wms/WMSLayerLoader";
+import WMSExample from "./components/map/wms/WMSExample";
 
 function App() {
   const [showDialog, setShowDialog] = useState(false);
@@ -19,6 +21,8 @@ function App() {
             {/* <SelectFeature /> */}
             {/* <EarthquakeClusters /> */}
             <GridLine />
+            <WMSLayerLoader />
+            {/* <WMSExample /> */}
           </Map>
           {showDialog && <SecondMapDialog />}
         </div>
