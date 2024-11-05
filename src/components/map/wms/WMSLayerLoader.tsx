@@ -7,6 +7,7 @@ import { fromLonLat } from "ol/proj";
 type SelectionState = "selected" | "unselected" | "indeterminate";
 
 type WMSLayer = {
+  id: string; // Unique identifier
   name: string;
   title: string;
   children?: WMSLayer[];
@@ -22,7 +23,7 @@ const WMSLayerLoader = () => {
   const [wmsVersion, setWmsVersion] = useState("1.3.0");
   const [layers, setLayers] = useState<WMSLayer[]>([]);
   const [layerSelectionState, setLayerSelectionState] = useState<{
-    [layerName: string]: SelectionState;
+    [layerId: string]: SelectionState;
   }>({});
 
   const fetchAndParseCapabilities = async () => {
@@ -60,33 +61,37 @@ const WMSLayerLoader = () => {
 
     const topLayerNodes = Array.from(capability.childNodes).filter((node) => node.nodeName === "Layer") as Element[];
 
-    return topLayerNodes.map((node) => parseLayer(node));
+    return topLayerNodes.map((node, index) => parseLayer(node, undefined, `layer-${index}`));
   };
 
-  const parseLayer = (layerNode: Element, parentLayer?: WMSLayer): WMSLayer => {
+  const parseLayer = (layerNode: Element, parentLayer?: WMSLayer, parentId: string = ""): WMSLayer => {
     const nameNode = layerNode.getElementsByTagName("Name")[0];
     const titleNode = layerNode.getElementsByTagName("Title")[0];
 
     const name = nameNode?.textContent || "";
     const title = titleNode?.textContent || "";
 
-    const layer: WMSLayer = { name, title, parent: parentLayer };
+    // Generate a unique ID by combining parent ID and current layer name or title
+    const idPart = name || title || "unnamed";
+    const id = parentId ? `${parentId}/${idPart}` : idPart;
+
+    const layer: WMSLayer = { id, name, title, parent: parentLayer };
 
     const childLayerNodes = Array.from(layerNode.childNodes).filter((node) => node.nodeName === "Layer") as Element[];
 
     if (childLayerNodes.length > 0) {
-      layer.children = childLayerNodes.map((childNode) => parseLayer(childNode, layer));
+      layer.children = childLayerNodes.map((childNode, index) => parseLayer(childNode, layer, `${id}`));
     }
 
     return layer;
   };
 
   const handleLayerSelection = (layer: WMSLayer, newState?: SelectionState) => {
-    const currentState = layerSelectionState[layer.name] || "unselected";
+    const currentState = layerSelectionState[layer.id] || "unselected";
     const nextState = newState || (currentState === "selected" ? "unselected" : "selected");
 
     const updatedSelectionState = { ...layerSelectionState };
-    updatedSelectionState[layer.name] = nextState;
+    updatedSelectionState[layer.id] = nextState;
 
     // Update children
     if (layer.children && layer.children.length > 0) {
@@ -102,11 +107,11 @@ const WMSLayerLoader = () => {
   const updateChildSelectionState = (
     layer: WMSLayer,
     state: SelectionState,
-    selectionState: { [layerName: string]: SelectionState }
+    selectionState: { [layerId: string]: SelectionState }
   ) => {
     if (layer.children) {
       layer.children.forEach((child) => {
-        selectionState[child.name] = state;
+        selectionState[child.id] = state;
         updateChildSelectionState(child, state, selectionState);
       });
     }
@@ -114,11 +119,11 @@ const WMSLayerLoader = () => {
 
   const updateParentSelectionState = (
     layer: WMSLayer | undefined,
-    selectionState: { [layerName: string]: SelectionState }
+    selectionState: { [layerId: string]: SelectionState }
   ) => {
     if (!layer) return;
 
-    const childStates = layer.children?.map((child) => selectionState[child.name]) || [];
+    const childStates = layer.children?.map((child) => selectionState[child.id]) || [];
 
     let newState: SelectionState;
     if (childStates.every((state) => state === "selected")) {
@@ -129,7 +134,7 @@ const WMSLayerLoader = () => {
       newState = "indeterminate";
     }
 
-    selectionState[layer.name] = newState;
+    selectionState[layer.id] = newState;
 
     updateParentSelectionState(layer.parent, selectionState);
   };
@@ -138,24 +143,28 @@ const WMSLayerLoader = () => {
     return layers.map((layer) => {
       const hasChildren = layer.children && layer.children.length > 0;
       const paddingLeft = level * 20;
-      const selectionState = layerSelectionState[layer.name] || "unselected";
+      const selectionState = layerSelectionState[layer.id] || "unselected";
 
       const isChecked = selectionState === "selected";
       const isIndeterminate = selectionState === "indeterminate";
 
       return (
-        <div key={`${layer.name}-${layer.title}`}>
+        <div key={layer.id}>
           <div style={{ paddingLeft: `${paddingLeft}px` }}>
             {layer.name && (
               <IndeterminateCheckbox
-                id={layer.name}
+                id={layer.id}
                 checked={isChecked}
                 indeterminate={isIndeterminate}
                 onChange={() => handleLayerSelection(layer)}
                 label={layer.title}
               />
             )}
-            {!layer.name && <span>{layer.title}</span>}
+            {!layer.name && (
+              <span>
+                <strong>{layer.title}</strong>
+              </span>
+            )}
           </div>
           {hasChildren && renderLayerTree(layer.children!, level + 1)}
         </div>
@@ -193,7 +202,12 @@ const WMSLayerLoader = () => {
 
     const selectedLayerNames = Object.entries(layerSelectionState)
       .filter(([_, state]) => state === "selected")
-      .map(([layerName]) => layerName);
+      .map(([layerId]) => {
+        // Find the layer by ID to get its name
+        const layer = findLayerById(layers, layerId);
+        return layer?.name;
+      })
+      .filter((name): name is string => !!name); // Filter out undefined names
 
     const mapLayers = map.getLayers().getArray();
     const existingLayerNames = mapLayers
@@ -238,6 +252,17 @@ const WMSLayerLoader = () => {
       map.getView().setZoom(4);
     }
   }, [layerSelectionState, map, wmsUrl, wmsVersion]);
+
+  const findLayerById = (layers: WMSLayer[], id: string): WMSLayer | undefined => {
+    for (const layer of layers) {
+      if (layer.id === id) return layer;
+      if (layer.children) {
+        const childLayer = findLayerById(layer.children, id);
+        if (childLayer) return childLayer;
+      }
+    }
+    return undefined;
+  };
 
   return (
     <div>
