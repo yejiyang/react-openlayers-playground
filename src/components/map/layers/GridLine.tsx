@@ -3,6 +3,8 @@ import MapContext from "../context/MapContext";
 import { Graticule } from "ol";
 import { Stroke } from "ol/style";
 
+const isDebugMode = false;
+
 type Props = {};
 
 const GridLine = (props: Props) => {
@@ -21,7 +23,8 @@ const GridLine = (props: Props) => {
   });
 
   useEffect(() => {
-    console.log("Adding grid line layer to map");
+    if (isDebugMode) console.log("Adding grid line layer to map");
+
     if (!map) return;
     map.addLayer(gridLineLayer);
 
